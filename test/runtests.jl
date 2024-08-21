@@ -1,6 +1,8 @@
 using Myexample
 using Test
 
+@test g(2.0) ≈ h(2.0)
+
 @testset "Myexample.jl" begin
-    # Write your tests here.
+    @test g(2.0) ≈ h(2.0)
 end
