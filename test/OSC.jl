@@ -151,3 +151,101 @@ Avoiding heap allocations is most necessary for O(n) algorithms or algorithms wi
 
 Use StaticArrays.jl to avoid heap allocations of small arrays in inner loops
 =#
+
+# f(x,y) = x+y
+
+# x = [1.0,3] # type is any therfore during compile it does not know the type
+#                   # hence it allocates heap plus the proessing becomes runtime like
+#                   # like python
+
+# x = [1.0,3.0] # the vector type is know hence type inference is possible therefore 
+#                     # we get the opitmized code compiled before hand   
+# function q(x)
+#   a = 4
+#   b = 2
+#   c = f(x[1],a)
+#   d = f(b,c)
+#   f(d,x[2])
+# end
+# @code_warntype q(x)
+# @btime q(x)
+
+
+#=
+Value types and isbits
+In Julia, types which can fully inferred and which are composed of 
+primitive or isbits types are value types. This means that, 
+inside of an array, their values are the values of the type itself, 
+and not a pointer to the values.
+You can check if the type is a value type through isbits:
+=#
+
+# f(x,y) = x+y
+# function g(x,y)
+#     a = 4
+#     b = 2
+#     c = f(x,a)
+#     d = f(b,c)
+#     f(d,y)
+#   end
+
+# struct MyComplex
+#     real::Float64
+#     imag::Float64
+# end
+# isbits(MyComplex(1.0, 1.0))
+
+# Base.:+(a::MyComplex,b::MyComplex) = MyComplex(a.real+b.real,a.imag+b.imag)
+# Base.:+(a::MyComplex,b::Int) = MyComplex(a.real+b,a.imag)
+# Base.:+(b::Int,a::MyComplex) = MyComplex(a.real+b,a.imag)
+# @code_warntype  g(MyComplex(1.0,1.0),MyComplex(1.0,1.0))
+
+#=
+In SIMD, a single instruction (like an addition or multiplication) is 
+executed on multiple data elements in parallel. This is different from 
+the traditional approach where each instruction operates on a single 
+data element at a time.
+=#
+
+# We can see that Mycomplex works for Float64 how do we make it
+# for any type
+
+# struct MyParameterizedComplex{T}
+#     real::T
+#     imag::T
+# end
+# isbits(MyParameterizedComplex(1.0, 1.0))
+
+# Base.:+(a::MyParameterizedComplex,b::MyParameterizedComplex) = MyParameterizedComplex(a.real+b.real,a.imag+b.imag)
+# Base.:+(a::MyParameterizedComplex,b::Int) = MyParameterizedComplex(a.real+b,a.imag)
+# Base.:+(b::Int,a::MyParameterizedComplex) = MyParameterizedComplex(a.real+b,a.imag)
+
+# as the compiler can do type inference, MyParameterizedComplex{T} 
+# is a concrete type for every T: it is a shorthand form for defining 
+# a whole family of types.
+
+# struct MySlowComplex
+#     real
+#     imag
+# end
+# isbits(MySlowComplex(1.0, 1.0))
+
+# Base.:+(a::MySlowComplex,b::MySlowComplex) = MySlowComplex(a.real+b.real,a.imag+b.imag)
+# Base.:+(a::MySlowComplex,b::Int) = MySlowComplex(a.real+b,a.imag)
+# Base.:+(b::Int,a::MySlowComplex) = MySlowComplex(a.real+b,a.imag)
+
+# Even though this type stable but the inner part real and image does not
+# have type defined hence it becomes a heap rather than a stack
+
+# struct MySlowComplex2
+#     real::AbstractFloat
+#     imag::AbstractFloat
+# end
+# isbits(MySlowComplex2(1.0, 1.0))
+
+# Base.:+(a::MySlowComplex2,b::MySlowComplex2) = MySlowComplex2(a.real+b.real,a.imag+b.imag)
+# Base.:+(a::MySlowComplex2,b::Int) = MySlowComplex2(a.real+b,a.imag)
+# Base.:+(b::Int,a::MySlowComplex2) = MySlowComplex2(a.real+b,a.imag)
+
+# It is intresting that partial information is even slower than zero information
+# here we use AbstractFloat for MySlowComplex2 which is slower than none in MySlowComplex
