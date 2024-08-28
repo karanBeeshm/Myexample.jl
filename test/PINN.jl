@@ -47,14 +47,14 @@ using Flux
 # display(loss())
 # Flux.train!(loss, Flux.params(NNODE), data, opt; cb=cb)
 
-# using Plots
-# t = 0:0.001:1.0
-# plot(t,g.(t),label="NN")
-# plot!(t,1.0 .+ sin.(2π.*t)/2π, label = "True Solution")
+using Plots
+t = 0:0.001:1.0
+plot(t,g.(t),label="NN")
+plot!(t,1.0 .+ sin.(2π.*t)/2π, label = "True Solution")
 
 
 
-## Harmonic Oscillator Informed Training
+# Harmonic Oscillator Informed Training
 
 using DifferentialEquations
 k = 1.0
@@ -102,6 +102,12 @@ plot(plot_t,force_plot,xlabel="t",label="True Force")
 plot!(plot_t,learned_force_plot,label="Predicted Force")
 scatter!(t,force_data,label="Force Measurements")
 
+force2(dx,x,k,t) = -k*x
+prob_simplified = SecondOrderODEProblem(force2,1.0,0.0,(0.0,10.0),k)
+sol_simplified = solve(prob_simplified)
+plot(sol,label=["Velocity" "Position"])
+plot!(sol_simplified,label=["Velocity Simplified" "Position Simplified"])
+
 random_positions = [2rand()-1 for i in 1:100] # random values in [-1,1]
 loss_ode() = sum(abs2,NNForce(x) - (-k*x) for x in random_positions)
 loss_ode()
@@ -126,3 +132,4 @@ learned_force_plot = NNForce.(positions_plot)
 plot(plot_t,force_plot,xlabel="t",label="True Force")
 plot!(plot_t,learned_force_plot,label="Predicted Force")
 scatter!(t,force_data,label="Force Measurements")
+
